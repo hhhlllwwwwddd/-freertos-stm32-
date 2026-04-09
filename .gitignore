@@ -1,0 +1,64 @@
+# STM32 .gitignore —— 忽略编译产物、调试文件、IDE临时文件等
+
+# 编译输出目录（Keil）
+*.axf
+*.elf
+*.hex
+*.bin
+*.map
+*.htm
+*.lnp
+*.sct
+*.crf
+*.o
+*.d
+*.lst
+*.tra
+*.dep
+*.bak
+*.tmp
+*.iex
+*.plg
+*.BuildLog.htm
+*.sct.bak
+Objects/
+Listings/
+
+# STM32CubeIDE / TrueSTUDIO
+Debug/
+Release/
+*.ld
+*.launch
+.settings/
+.cproject
+.project
+
+# GCC 工具链中间文件
+*.a
+*.so
+*.out
+
+# 调试与下载相关
+*.ini
+*.dbgconf
+*.jlink
+*.stlink
+*.uvoptx
+*.uvprojx
+*.uvguix.*
+*.uvgui.*
+
+# IDE 通用配置（避免提交个人设置）
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统生成
+.DS_Store
+Thumbs.db
+
+# 日志与备份
+*.log
+*.orig
+*.rej

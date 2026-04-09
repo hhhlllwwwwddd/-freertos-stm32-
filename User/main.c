@@ -14,6 +14,7 @@ TimerHandle_t timer_handle_fan;
 
 // 分支操作
 // 主分支操作
+// 再次操作分支
 // 再次操作主分支
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {

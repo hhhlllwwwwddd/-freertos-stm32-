@@ -11,8 +11,6 @@
 
 TimerHandle_t timer_upload_data;
 TimerHandle_t timer_handle_fan;
-// test
-// test
 
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
@@ -34,6 +32,8 @@ void test(void *pvParameters)
         os_delay_s(5);
     }
 }
+
+// 测试git提交
 int main(void)
 {
     /* 配置NVIC为4号分组方式 */

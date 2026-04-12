@@ -14,11 +14,11 @@
 #include "at_air780e.h"
 #include "cJSON.h"
 
-#define ITEM_INTERVAL_S         10      /**< 写入记录的时间间隔 */
-#define UPLOAD_INTERVAL_S       2     /**< 上传到服务器的时间间隔 */
-#define REQ_TIME_INTERVAL_S     180 /**< 请求时间同步的时间间隔 */
-#define TCP_SERVER_IP           "8.135.10.183"
-#define TCP_SERVER_PORT         34135
+#define ITEM_INTERVAL_S 10      /**< 写入记录的时间间隔 */
+#define UPLOAD_INTERVAL_S 2     /**< 上传到服务器的时间间隔 */
+#define REQ_TIME_INTERVAL_S 180 /**< 请求时间同步的时间间隔 */
+#define TCP_SERVER_IP "8.135.10.183"
+#define TCP_SERVER_PORT 34135
 
 uint32_t timestamp_local = 0; // 本地时间戳
 
@@ -58,7 +58,7 @@ struct bike
     uint8_t reset_data;      /**< 是否重置统计变量的标志 */
 
     /* 下面是旗舰版 增加/改动 的变量 */
-    uint8_t data_export_n;    /**< 导出数据项编号 */
+    uint8_t data_export_n; /**< 导出数据项编号 */
 };
 
 static struct bike my_bike;
@@ -535,7 +535,7 @@ void bike_cloud_upload_data(void)
 // 该函数应1秒调用一次
 void bike_local_handle(void)
 {
-    my_bike.total_time_sec++;   // 累加骑行总时长
+    my_bike.total_time_sec++; // 累加骑行总时长
 
     bike_calc_running_data();
 
@@ -549,51 +549,57 @@ void bike_local_handle(void)
 // 该函数应1秒调用一次
 void bike_online_handle(void)
 {
-    switch(my_bike.running_state)
+    switch (my_bike.running_state)
     {
-    case RUNNING_UPDATED_TIME:      // 和服务器同步时间后
+    case RUNNING_UPDATED_TIME: // 和服务器同步时间后
         timestamp_local++;
         if (timestamp_local % UPLOAD_INTERVAL_S == 0) // 每隔2秒上报数据
             bike_cloud_upload_data();
         if (timestamp_local % REQ_TIME_INTERVAL_S == 0) // 每隔3分钟请求时间
             bike_cloud_time_request();
         break;
-    case RUNNING_CONNECTED_SERVER:  // 连接服务器后，还没有同步时间，每隔1秒钟请求时间
-        bike_cloud_time_request(); 
+    case RUNNING_CONNECTED_SERVER: // 连接服务器后，还没有同步时间，每隔1秒钟请求时间
+        bike_cloud_time_request();
         break;
     case RUNNING_NOT_CONNECTED_SERVER: // do nothing
         break;
-    default: break;
+    default:
+        break;
     }
 }
 // 收到4G数据的回调函数
 void air780e_recv_data_cb(const char *data, int len)
 {
-    #define RECV_BUF_SIZE 512
-    static char recv_buf[RECV_BUF_SIZE];  // 缓冲区
-    static int total_len = 0;             // 当前累计的数据长度
+#define RECV_BUF_SIZE 512
+    static char recv_buf[RECV_BUF_SIZE]; // 缓冲区
+    static int total_len = 0;            // 当前累计的数据长度
 
-    if (len <= 0) {
-        return;  // 没数据，直接返回
+    if (len <= 0)
+    {
+        return; // 没数据，直接返回
     }
 
     // 检查缓冲区是否能装下这次收到的数据
-    if (total_len + len >= RECV_BUF_SIZE - 1) {
+    if (total_len + len >= RECV_BUF_SIZE - 1)
+    {
         Log_e("Receive buffer overflow, clearing buffer\n");
-        total_len = 0;   // 出错了，清空缓冲区
+        total_len = 0; // 出错了，清空缓冲区
         return;
     }
 
     // 把收到的数据拷贝进缓冲区
     memcpy(recv_buf + total_len, data, len);
     total_len += len;
-    recv_buf[total_len] = '\0';  // 保证字符串结尾
+    recv_buf[total_len] = '\0'; // 保证字符串结尾
 
     // 尝试处理
-    if (bike_handle_server_data(recv_buf) == 0) {
+    if (bike_handle_server_data(recv_buf) == 0)
+    {
         // 处理成功，清空缓冲区
         total_len = 0;
-    } else {
+    }
+    else
+    {
         // 处理失败，继续等待后续数据
         Log_e("Invalid JSON:[%d], %s, waiting for more data...\n", total_len, recv_buf);
     }
@@ -601,12 +607,15 @@ void air780e_recv_data_cb(const char *data, int len)
 
 int is_key1_press(void)
 {
-    if (GPIO_ReadInputDataBit(KEY1_PORT, KEY1_PIN) == 0) {
-        os_delay_ms(20);    //消抖
-        if (GPIO_ReadInputDataBit(KEY1_PORT, KEY1_PIN) == 0) {
+    if (GPIO_ReadInputDataBit(KEY1_PORT, KEY1_PIN) == 0)
+    {
+        os_delay_ms(20); // 消抖
+        if (GPIO_ReadInputDataBit(KEY1_PORT, KEY1_PIN) == 0)
+        {
             // 等待按键松开
-            while (GPIO_ReadInputDataBit(KEY1_PORT, KEY1_PIN) == 0);
-            os_delay_ms(20);    //消抖
+            while (GPIO_ReadInputDataBit(KEY1_PORT, KEY1_PIN) == 0)
+                ;
+            os_delay_ms(20); // 消抖
             return 1;
         }
     }
@@ -615,12 +624,15 @@ int is_key1_press(void)
 }
 int is_key2_press(void)
 {
-    if (GPIO_ReadInputDataBit(KEY2_PORT, KEY2_PIN) == 0) {
-        os_delay_ms(20);    //消抖
-        if (GPIO_ReadInputDataBit(KEY2_PORT, KEY2_PIN) == 0) {
+    if (GPIO_ReadInputDataBit(KEY2_PORT, KEY2_PIN) == 0)
+    {
+        os_delay_ms(20); // 消抖
+        if (GPIO_ReadInputDataBit(KEY2_PORT, KEY2_PIN) == 0)
+        {
             // 等待按键松开
-            while (GPIO_ReadInputDataBit(KEY2_PORT, KEY2_PIN) == 0);
-            os_delay_ms(20);    //消抖
+            while (GPIO_ReadInputDataBit(KEY2_PORT, KEY2_PIN) == 0)
+                ;
+            os_delay_ms(20); // 消抖
             return 1;
         }
     }
@@ -653,7 +665,7 @@ void bike_task(void *pvParameters)
 
         if (notify_bits & NOTIFY_GPRMC_RECV) // 收到GPS数据
         {
-            //Log_d("NOTIFY_GPRMC_RECV\n");
+            // Log_d("NOTIFY_GPRMC_RECV\n");
             parse_GPRMC();
         }
 
@@ -685,22 +697,25 @@ void bike_task(void *pvParameters)
 
 void timer_handle_bike_cb(TimerHandle_t xTimer)
 {
-     bike_screen_show();
+    bike_screen_show();
 
-    if(my_bike.bike_state == RUNNING) {
+    if (my_bike.bike_state == RUNNING)
+    {
         bike_local_handle();
         bike_online_handle();
     }
 }
 
 void bike_start(void)
-{ 
+{
     timer_handle_bike = xTimerCreate("bikd_timer", 1000, pdTRUE, (void *)1, timer_handle_bike_cb);
-    
-    if (!timer_handle_bike) {
+
+    if (!timer_handle_bike)
+    {
         Log_e("create timer fail!\n");
         // 无限循环，防止继续执行
-        while(1);
+        while (1)
+            ;
     }
 
     xTimerStart(timer_handle_bike, 0);

@@ -1,6 +1,9 @@
 #include "ringbuffer.h"
 
-/* 初始化环形缓冲区 */
+/**
+  *初始化环形缓冲区 ，保存串口收到的数据，作用于at命令收发execute
+  *外部调用ai_interface.c，stm32_it.c
+  */
 void ringbuffer_init(ringbuffer_t* rbuf)
 {
     rbuf->read_index = 0;

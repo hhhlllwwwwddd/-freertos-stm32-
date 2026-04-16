@@ -4,9 +4,10 @@
 
 #define AT_COMMAND_MAX_LEN 128
 
-typedef enum {
-    AIR780E_ECHO_OFF = 0,     // 对应 ATE0，关闭回显
-    AIR780E_ECHO_ON = 1       // 对应 ATE1，开启回显
+typedef enum
+{
+    AIR780E_ECHO_OFF = 0, // 对应 ATE0，关闭回显
+    AIR780E_ECHO_ON = 1   // 对应 ATE1，开启回显
 } AIR780E_ECHO_MODE;
 
 const char *RESPONSE_OK = "OK\r\n";
@@ -26,8 +27,8 @@ recv_cb_t recv_cb; /* 函数指针 */
 
 static queue_t cmd_queue;
 
-#define AIR780E_CONNECTED_SERVER       1
-#define AIR780E_NOT_CONNECTED_SERVER   0
+#define AIR780E_CONNECTED_SERVER 1
+#define AIR780E_NOT_CONNECTED_SERVER 0
 static int _air780e_is_connected_server = AIR780E_NOT_CONNECTED_SERVER;
 
 /**
@@ -58,12 +59,13 @@ AT_RESULT air780e_set_echo(AIR780E_ECHO_MODE enable)
  */
 AT_RESULT air780e_sim_unlock(void)
 {
-    char status[10]; 
+    char status[10];
     char response[AT_COMMAND_MAX_LEN];
     AT_RESULT result;
-    
+
     result = at_execute("AT+CPIN?\r", RESPONSE_OK, RESPONSE_ERROR, response, sizeof(response));
-    if (result != AT_OK) {
+    if (result != AT_OK)
+    {
         Log_e("Failed to execute AT+CPIN\n");
         return result;
     }
@@ -72,16 +74,21 @@ AT_RESULT air780e_sim_unlock(void)
     Log_d("AT+CPIN Response: %s\n", response);
     // 使用 sscanf 提取 STATUS 值
     char *pos = strstr(response, "+CPIN:");
-    if (pos) {
-        if (sscanf(pos, "+CPIN: %s", status) == 1) {
-            if (strcmp(status, "READY") == 0) {
+    if (pos)
+    {
+        if (sscanf(pos, "+CPIN: %s", status) == 1)
+        {
+            if (strcmp(status, "READY") == 0)
+            {
                 return AT_OK;
             }
-        } else {
+        }
+        else
+        {
             Log_e("AT+CPIN return wrong status:%s.\n", status);
         }
     }
-    
+
     return AT_FAILED;
 }
 /**
@@ -91,12 +98,13 @@ AT_RESULT air780e_sim_unlock(void)
  */
 AT_RESULT air780e_register(void)
 {
-    char status[10]; 
+    char status[10];
     char response[AT_COMMAND_MAX_LEN];
     AT_RESULT result;
-    
+
     result = at_execute("AT+CREG?\r", RESPONSE_OK, RESPONSE_ERROR, response, sizeof(response));
-    if (result != AT_OK) {
+    if (result != AT_OK)
+    {
         Log_e("Failed to execute AT+CREG\n");
         return result;
     }
@@ -105,16 +113,21 @@ AT_RESULT air780e_register(void)
     Log_d("AT+CREG Response: %s\n", response);
     // 使用 sscanf 提取 STATUS 值
     char *pos = strstr(response, "+CREG:");
-    if (pos) {
-        if (sscanf(pos, "+CREG: %s", status) == 1) {
-            if (strcmp(status, "0,1") == 0) {
+    if (pos)
+    {
+        if (sscanf(pos, "+CREG: %s", status) == 1)
+        {
+            if (strcmp(status, "0,1") == 0)
+            {
                 return AT_OK;
             }
-        } else {
+        }
+        else
+        {
             Log_e("AT+CREG return wrong status:%s.\n", status);
         }
     }
-    
+
     return AT_FAILED;
 }
 /**
@@ -124,12 +137,13 @@ AT_RESULT air780e_register(void)
  */
 AT_RESULT air780e_attached(void)
 {
-    char status[10]; 
+    char status[10];
     char response[AT_COMMAND_MAX_LEN];
     AT_RESULT result;
-    
+
     result = at_execute("AT+CGATT?\r", RESPONSE_OK, RESPONSE_ERROR, response, sizeof(response));
-    if (result != AT_OK) {
+    if (result != AT_OK)
+    {
         Log_e("Failed to execute AT+CGATT\n");
         return result;
     }
@@ -138,16 +152,21 @@ AT_RESULT air780e_attached(void)
     Log_d("AT+CGATT Response: %s\n", response);
     // 使用 sscanf 提取 STATUS 值
     char *pos = strstr(response, "+CGATT: ");
-    if (pos) {
-        if (sscanf(pos, "+CGATT: %s", status) == 1) {
-            if (strcmp(status, "1") == 0) {
+    if (pos)
+    {
+        if (sscanf(pos, "+CGATT: %s", status) == 1)
+        {
+            if (strcmp(status, "1") == 0)
+            {
                 return AT_OK;
             }
-        } else {
+        }
+        else
+        {
             Log_e("AT+CGATT return wrong status:%s.\n", status);
         }
     }
-    
+
     return AT_FAILED;
 }
 /**
@@ -184,9 +203,10 @@ AT_RESULT air780e_shut_pdp(void)
 AT_RESULT air780e_set_passthrough_mode(void)
 {
     AT_RESULT result;
-    
+
     result = at_execute("AT+CIPMODE=1\r", RESPONSE_OK, RESPONSE_ERROR, NULL, 0);
-    if (result != AT_OK) {
+    if (result != AT_OK)
+    {
         Log_e("Failed to execute AT+CIPMODE\n");
         return result;
     }
@@ -202,7 +222,7 @@ AT_RESULT air780e_set_passthrough_mode(void)
 void air780e_exit_passthrough_mode(void)
 {
     os_delay_s(1);
-    at_send_cmd("+++");  // 直接发送退出透传模式命令
+    at_send_cmd("+++"); // 直接发送退出透传模式命令
     os_delay_ms(500);
 }
 /**
@@ -237,15 +257,17 @@ AT_RESULT air780e_disconnect_server()
  */
 void air780e_send_data(const char *data, int len)
 {
-    if(_air780e_is_connected_server == AIR780E_CONNECTED_SERVER) {
-        char *str = (char *)os_malloc(len+1);
-        if (!str) {
+    if (_air780e_is_connected_server == AIR780E_CONNECTED_SERVER)
+    {
+        char *str = (char *)os_malloc(len + 1);
+        if (!str)
+        {
             Log_e("Memory allocation failed\n");
-            return ;
+            return;
         }
         strcpy(str, data);
         enqueue(&cmd_queue, str);
-        Log_d("enqueue address [%p]\n", str);  // remember to free!
+        Log_d("enqueue address [%p]\n", str); // remember to free!
         xTaskNotify(at_task_handle, NOTIFY_SEND_DATA, eSetBits);
     }
 }
@@ -293,19 +315,21 @@ AT_RESULT air780e_disconnect_server_shut(void)
 
     /* 不管是否成功，都将标记位设置为断开服务端，如果不这样设置，程序会更加复杂 */
     _air780e_is_connected_server = AIR780E_NOT_CONNECTED_SERVER;
-    
+
     air780e_exit_passthrough_mode();
-    
+
     res = air780e_disconnect_server();
-    if (res != AT_OK) {
+    if (res != AT_OK)
+    {
         return res;
     }
 
     res = air780e_shut_pdp();
-    if (res != AT_OK) {
+    if (res != AT_OK)
+    {
         return res;
-    }   
-    
+    }
+
     return AT_OK;
 }
 /**
@@ -318,55 +342,63 @@ AT_RESULT air780e_activate_connect_server(const char *ip, int port)
 {
     AT_RESULT res;
     static int n = 0;
-    
+
     if (_air780e_is_connected_server == AIR780E_CONNECTED_SERVER)
         return AT_OK;
 
     n++;
 
-    if(n >= 10) { // 连续 10 次调用这个函数，都没有连上服务端，就重启模组
+    if (n >= 10)
+    { // 连续 10 次调用这个函数，都没有连上服务端，就重启模组
         n = 0;
         Log_e("Failed to connect to server 10 times, restarting module...\n");
         air780e_reset();
         return AT_TIME_OUT;
     }
-    
+
     res = air780e_ready();
-    if (res != AT_OK) {
+    if (res != AT_OK)
+    {
         Log_e("air780e_ready failed: %d\n", res);
         return res;
     }
     res = air780e_set_echo(AIR780E_ECHO_OFF);
-    if (res != AT_OK) {
+    if (res != AT_OK)
+    {
         Log_e("air780e_set_echo failed: %d\n", res);
         return res;
     }
     res = air780e_sim_unlock();
-    if (res != AT_OK) {
+    if (res != AT_OK)
+    {
         Log_e("air780e_sim_unlock failed: %d\n", res);
         return res;
     }
     res = air780e_register();
-    if (res != AT_OK) {
+    if (res != AT_OK)
+    {
         Log_e("air780e_register failed: %d\n", res);
         return res;
     }
     res = air780e_attached();
-    if (res != AT_OK) {
+    if (res != AT_OK)
+    {
         Log_e("air780e_attached failed: %d\n", res);
         return res;
     }
     res = air780e_set_passthrough_mode();
-    if (res != AT_OK) {
+    if (res != AT_OK)
+    {
         Log_e("air780e_set_passthrough_mode failed: %d\n", res);
         return res;
     }
     res = air780e_connect_server("TCP", ip, port);
-    if (res != AT_OK) {
+    if (res != AT_OK)
+    {
         Log_e("air780e_connect_server failed: %d\n", res);
         return res;
     }
-    
+
     _air780e_is_connected_server = AIR780E_CONNECTED_SERVER;
     n = 0;
 
@@ -376,51 +408,55 @@ AT_RESULT air780e_activate_connect_server(const char *ip, int port)
 void air780e_at_task(void *pvParameters)
 {
     uint32_t notify_bits = 0;
-    char* data_to_send;
+    char *data_to_send;
 
-    while(1)
+    while (1)
     {
         // 透传模式时，永久阻塞在这一句
-        xTaskNotifyWait(0, 0xFFFFFFFF, (uint32_t*)&notify_bits, portMAX_DELAY );
-        
-        if (notify_bits & NOTIFY_START_AIR780E)  // 启动模块，连接服务器
+        xTaskNotifyWait(0, 0xFFFFFFFF, (uint32_t *)&notify_bits, portMAX_DELAY);
+
+        if (notify_bits & NOTIFY_START_AIR780E) // 启动模块，连接服务器
         {
             Log_d("NOTIFY_START_AIR780E\n");
-            while(air780e_activate_connect_server(air780e_ip, air780e_port) != AT_OK) {
+            while (air780e_activate_connect_server(air780e_ip, air780e_port) != AT_OK)
+            {
                 os_delay_ms(100);
             }
-            USART_ITConfig(USART2, USART_IT_IDLE, ENABLE);  // 使能空闲中断
+            USART_ITConfig(USART2, USART_IT_IDLE, ENABLE); // 使能空闲中断
             xTaskNotify(bike_task_handle, NOTIFY_CONNECTED_SERVER, eSetBits);
         }
 
-        if (notify_bits & NOTIFY_SEND_DATA)  // 发送数据到服务器
+        if (notify_bits & NOTIFY_SEND_DATA) // 发送数据到服务器
         {
             Log_d("NOTIFY_SEND_DATA\n");
 
-            while (!is_empty(&cmd_queue)) {
-                if (dequeue(&cmd_queue, &data_to_send) == OK) {
+            while (!is_empty(&cmd_queue))
+            {
+                if (dequeue(&cmd_queue, &data_to_send) == OK)
+                {
                     Log_d("send [%p] [%s] to server\n", data_to_send, data_to_send);
                     at_passthrough_send(data_to_send, strlen(data_to_send));
-                    os_free(data_to_send);  // 释放字符串内存
+                    os_free(data_to_send); // 释放字符串内存
                     data_to_send = NULL;
                 }
             }
         }
 
-        if (notify_bits & NOTIFY_USART_RX)  // 从服务器收到数据
+        if (notify_bits & NOTIFY_USART_RX) // 从服务器收到数据
         {
             Log_d("NOTIFY_USART_RX\n");
-            if (_air780e_is_connected_server == AIR780E_CONNECTED_SERVER) {
+            if (_air780e_is_connected_server == AIR780E_CONNECTED_SERVER)
+            {
                 recv_data_len = at_passthrough_receive(recv_buf, sizeof(recv_buf));
                 recv_buf[recv_data_len] = '\0';
                 recv_cb(recv_buf, recv_data_len);
             }
         }
 
-        if (notify_bits & NOTIFY_STOP_AIR780E)  // 断开连接
+        if (notify_bits & NOTIFY_STOP_AIR780E) // 断开连接
         {
             Log_d("NOTIFY_STOP_AIR780E\n");
-            USART_ITConfig(USART2, USART_IT_IDLE, DISABLE);  // 关闭空闲中断
+            USART_ITConfig(USART2, USART_IT_IDLE, DISABLE); // 关闭空闲中断
             air780e_disconnect_server_shut();
         }
     }
@@ -446,14 +482,14 @@ void air780e_start(const char *ip, int port, recv_cb_t cb)
 void air780e_init(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
-    
-    RCC_APB2PeriphClockCmd(AIR780E_EN_CLK, ENABLE); 
 
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; 
+    RCC_APB2PeriphClockCmd(AIR780E_EN_CLK, ENABLE);
+
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Pin = AIR780E_EN_PIN;
     GPIO_Init(AIR780E_EN_PORT, &GPIO_InitStructure);
-    
+
     at_init();
     air780e_reset();
 
@@ -461,8 +497,8 @@ void air780e_init(void)
 
     os_mem_info();
     // 1K字节的栈空间
-    xTaskCreate(air780e_at_task, "air780e_at_task", 256, NULL, 4, 
-        (TaskHandle_t*)&at_task_handle);
+    xTaskCreate(air780e_at_task, "air780e_at_task", 256, NULL, 4,
+                (TaskHandle_t *)&at_task_handle);
     os_mem_info();
 
     /* AIR780E AT指令串口，注意波特率要和AIR780E模块配置相同 */

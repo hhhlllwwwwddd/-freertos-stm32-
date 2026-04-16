@@ -78,7 +78,7 @@ AT_RESULT at_wait_for_response(const char *succeeded_response, const char *faile
             Log_e("at_wait_for_response Time out\n");
             return AT_TIME_OUT;
         }
-        // 从环形缓冲区读取数据，直接写入 buffer 的剩余位置
+        // 从环形缓冲区读取数据，直接写入 buffer 的剩余位置，返回这次读取的字节数
         bytes_read = ringbuffer_read(&at_ringbuf, buffer + buffer_offset, sizeof(buffer) - buffer_offset - 1);
         
         if (bytes_read > 0) {
@@ -103,7 +103,7 @@ AT_RESULT at_wait_for_response(const char *succeeded_response, const char *faile
                 return AT_FAILED;
             }
 
-            // 如果未匹配到响应，则继续读取直到超时
+            // 如果未匹配到响应，则继续读取直到超时，可以确保在超时范围内数据有延时能够正确读取
         }
         os_task_yield();  // 让出CPU，让其他任务得以运行
     }

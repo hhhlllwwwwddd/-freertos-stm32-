@@ -13,7 +13,8 @@ ringbuffer_t at_ringbuf;
  */
 void at_passthrough_send(const char *data, int len)
 {
-    while (len--) {
+    while (len--)
+    {
         usart2_send_byte(*data);
         data++;
     }
@@ -38,16 +39,15 @@ void at_send_cmd(char *cmd)
 {
     // 发送 AT 指令
     usart2_send_string(cmd);
-    Log_d("at_send_cmd:%s\n", cmd);  // 这里会多一个空行，因为命令中也包含 \n
+    Log_d("at_send_cmd:%s\n", cmd); // 这里会多一个空行，因为命令中也包含 \n
 }
 /**
  * 接收字节数据
  *
- * @param byte 串口收到的字节数据
+ * @param byte 串口收到的字节数据,写入环形缓冲区
  */
 void at_receive_byte(char byte)
 {
-    // 写入环形缓冲区
     ringbuffer_write(&at_ringbuf, byte);
 }
 /**
@@ -63,34 +63,38 @@ void at_receive_byte(char byte)
  *         - 找到 failed_response 时返回 AT_FAILED
  *         - 超时未收到响应时返回 AT_TIME_OUT
  */
-AT_RESULT at_wait_for_response(const char *succeeded_response, const char *failed_response, int32_t timeout_ms
-    , char *response_buffer, size_t buffer_size)
+AT_RESULT at_wait_for_response(const char *succeeded_response, const char *failed_response, int32_t timeout_ms, char *response_buffer, size_t buffer_size)
 {
-    uint32_t start_time = os_millis();  // 获取当前的系统毫秒数
-    char buffer[512] = {0};              // 假设每次读取的最大数据长度为 512 字节
-    int buffer_offset = 0;               // 当前缓冲区中的数据长度
-    int bytes_read = 0;                  // 一次读取到的数据
+    uint32_t start_time = os_millis(); // 获取当前的系统毫秒数
+    char buffer[512] = {0};            // 假设每次读取的最大数据长度为 512 字节
+    int buffer_offset = 0;             // 当前缓冲区中的数据长度
+    int bytes_read = 0;                // 一次读取到的数据
 
     // 持续读取直到超时
-    while (1) {
+    while (1)
+    {
         // 如果 timeout_ms 不为 -1，则检查是否超时
-        if (timeout_ms != -1 && (os_millis() - start_time >= timeout_ms)) {
+        if (timeout_ms != -1 && (os_millis() - start_time >= timeout_ms))
+        {
             Log_e("at_wait_for_response Time out\n");
             return AT_TIME_OUT;
         }
         // 从环形缓冲区读取数据，直接写入 buffer 的剩余位置，返回这次读取的字节数
         bytes_read = ringbuffer_read(&at_ringbuf, buffer + buffer_offset, sizeof(buffer) - buffer_offset - 1);
-        
-        if (bytes_read > 0) {
+
+        if (bytes_read > 0)
+        {
             // 调试日志
-            //log_d("read [%d]\n", bytes_read);
-            //print_hex_array(buffer + buffer_offset, bytes_read);
+            // log_d("read [%d]\n", bytes_read);
+            // print_hex_array(buffer + buffer_offset, bytes_read);
             // 更新偏移长度
             buffer_offset += bytes_read;
 
             // 检查是否包含成功响应
-            if (succeeded_response && strstr(buffer, succeeded_response)) {
-                if(response_buffer) {
+            if (succeeded_response && strstr(buffer, succeeded_response))
+            {
+                if (response_buffer)
+                {
                     // strncpy 不会在目标字符串的末尾添加空字符 '\0'
                     strncpy(response_buffer, buffer, buffer_size - 1);
                 }
@@ -98,14 +102,15 @@ AT_RESULT at_wait_for_response(const char *succeeded_response, const char *faile
             }
 
             // 检查是否包含失败响应
-            if (failed_response && strstr(buffer, failed_response)) {
+            if (failed_response && strstr(buffer, failed_response))
+            {
                 Log_e("at_wait_for_response AT_FAILED\n");
                 return AT_FAILED;
             }
 
             // 如果未匹配到响应，则继续读取直到超时，可以确保在超时范围内数据有延时能够正确读取
         }
-        os_task_yield();  // 让出CPU，让其他任务得以运行
+        os_task_yield(); // 让出CPU，让其他任务得以运行
     }
 }
 
@@ -119,13 +124,14 @@ AT_RESULT at_wait_for_response(const char *succeeded_response, const char *faile
  * @param buffer_size response_buffer的大小
  * @return 执行结果，可能为 AT_OK、AT_FAILED、AT_ERROR 等
  */
-AT_RESULT at_execute(char *cmd, const char *succeeded_response, const char *failed_response, 
-    char *response_buffer, size_t buffer_size)
+AT_RESULT at_execute(char *cmd, const char *succeeded_response, const char *failed_response,
+                     char *response_buffer, size_t buffer_size)
 {
-    if (response_buffer != NULL) {
+    if (response_buffer != NULL)
+    {
         memset(response_buffer, 0, buffer_size); // 清空响应缓冲区
     }
-    at_send_cmd(cmd); // 发送 AT 指令
+    at_send_cmd(cmd);                                                                                           // 发送 AT 指令
     return at_wait_for_response(succeeded_response, failed_response, AT_TIMEOUT, response_buffer, buffer_size); // 等待并解析响应
 }
 

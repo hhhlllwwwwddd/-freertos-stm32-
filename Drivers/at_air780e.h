@@ -3,20 +3,20 @@
 
 #include "at_interface.h"
 
-#define AIR780E_EN_PORT          GPIOA                       /* GPIO端口组 */
-#define AIR780E_EN_CLK           RCC_APB2Periph_GPIOA        /* GPIO端口时钟 */
-#define AIR780E_EN_PIN           GPIO_Pin_1                  /* GPIO端口号 */
+#define AIR780E_EN_PORT GPIOA               /* GPIO端口组 */
+#define AIR780E_EN_CLK RCC_APB2Periph_GPIOA /* GPIO端口时钟 */
+#define AIR780E_EN_PIN GPIO_Pin_1           /* GPIO端口号 */
 
 // 定义通知位
-#define NOTIFY_KEY1_PRESS       (1 << 0)    // 按键1按下通知
-#define NOTIFY_KEY2_PRESS       (1 << 1)    // 按键2按下通知
-#define NOTIFY_SEND_DATA        (1 << 2)    // 发送数据到服务端通知
-#define NOTIFY_USART_RX         (1 << 3)    // 从服务端收到数据通知
-#define NOTIFY_START_AIR780E    (1 << 4)    // 连接服务端通知
-#define NOTIFY_STOP_AIR780E     (1 << 5)    // 断开服务端通知
+#define NOTIFY_KEY1_PRESS (1 << 0)    // 按键1按下通知
+#define NOTIFY_KEY2_PRESS (1 << 1)    // 按键2按下通知
+#define NOTIFY_SEND_DATA (1 << 2)     // 发送数据到服务端通知
+#define NOTIFY_USART_RX (1 << 3)      // 从服务端收到数据通知
+#define NOTIFY_START_AIR780E (1 << 4) // 连接服务端通知
+#define NOTIFY_STOP_AIR780E (1 << 5)  // 断开服务端通知
 
 /* 定义一个函数指针类型，用于接收串口透传数据时进行回调 */
-typedef void(*recv_cb_t)(const char *, int);
+typedef void (*recv_cb_t)(const char *, int);
 
 /**
  * AIR780E 是否连接服务器成功

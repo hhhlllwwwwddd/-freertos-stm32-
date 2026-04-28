@@ -62,12 +62,12 @@ void key_init(void)
     /* 使能外设 GPIOC 和 IO选择器 AFIO 的时钟 */
     RCC_APB2PeriphClockCmd(KEY2_CLK, ENABLE);
    
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
     GPIO_InitStructure.GPIO_Pin = KEY1_PIN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(KEY1_PORT, &GPIO_InitStructure);
 
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
     GPIO_InitStructure.GPIO_Pin = KEY2_PIN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(KEY2_PORT, &GPIO_InitStructure);

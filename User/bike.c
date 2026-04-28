@@ -258,7 +258,7 @@ static int bike_data_export(void)
     return 0;
 }
 /*
- * 自行车数据导出
+ * 自行车数据导出请求
  */
 void bike_data_exprot_request(char *cmd)
 {
@@ -286,7 +286,7 @@ void bike_reset(void)
     my_bike.running_state = RUNNING_NOT_CONNECTED_SERVER;
     my_bike.current_screen = SCREEN_WELCOME;
 
-    my_bike.reset_data = 1;
+    my_bike.reset_data = 1; // 重置数据标志位,项目中用于重置数据时使用
 
     set_first_write_flag();
 }
@@ -385,6 +385,7 @@ int parse_json_cmd(const char *json_str, char *cmd_out, size_t cmd_out_size)
     return 1;
 }
 
+// 处理服务器返回的数据，根据cmd字段判断是否需要更新本地时间戳
 int bike_handle_server_data(const char *json_str)
 {
     char cmd[32] = {0}; // 用于存储解析到的 cmd 值
@@ -397,7 +398,7 @@ int bike_handle_server_data(const char *json_str)
             uint32_t timestamp_cloud;
             if (parse_json_time(json_str, &timestamp_cloud))
             {
-                // 更新本地时间戳
+                // 接受到服务器返回的时间戳，更新本地时间戳，用于同步时间
                 timestamp_local = timestamp_cloud + 8 * 3600;
                 xTaskNotify(bike_task_handle, NOTIFY_TIME_UPDATE, eSetBits);
             }
@@ -551,12 +552,12 @@ void bike_online_handle(void)
 {
     switch (my_bike.running_state)
     {
-    case RUNNING_UPDATED_TIME: // 和服务器同步时间后
-        timestamp_local++;
-        if (timestamp_local % UPLOAD_INTERVAL_S == 0) // 每隔2秒上报数据
-            bike_cloud_upload_data();
+    case RUNNING_UPDATED_TIME:                          // 和服务器同步时间后
+        timestamp_local++;                              // 本地时间加1秒
+        if (timestamp_local % UPLOAD_INTERVAL_S == 0)   // 每隔2秒上报数据
+            bike_cloud_upload_data();                   // 封装数据字符串到链式队列cmd_queue保存
         if (timestamp_local % REQ_TIME_INTERVAL_S == 0) // 每隔3分钟请求时间
-            bike_cloud_time_request();
+            bike_cloud_time_request();                  // 请求服务器时间字符串到链式队列cmd_queue保存
         break;
     case RUNNING_CONNECTED_SERVER: // 连接服务器后，还没有同步时间，每隔1秒钟请求时间
         bike_cloud_time_request();
@@ -567,6 +568,18 @@ void bike_online_handle(void)
         break;
     }
 }
+
+void timer_handle_bike_cb(TimerHandle_t xTimer)
+{
+    bike_screen_show();
+
+    if (my_bike.bike_state == RUNNING)
+    {
+        bike_local_handle();
+        bike_online_handle();
+    }
+}
+
 // 收到4G数据的回调函数
 void air780e_recv_data_cb(const char *data, int len)
 {
@@ -587,7 +600,7 @@ void air780e_recv_data_cb(const char *data, int len)
         return;
     }
 
-    // 把收到的数据拷贝进缓冲区
+    // 云端数据透传模式直接存储到ringbuffer，从环形缓冲区里读
     memcpy(recv_buf + total_len, data, len);
     total_len += len;
     recv_buf[total_len] = '\0'; // 保证字符串结尾
@@ -605,15 +618,16 @@ void air780e_recv_data_cb(const char *data, int len)
     }
 }
 
+// 高电平有效
 int is_key1_press(void)
 {
-    if (GPIO_ReadInputDataBit(KEY1_PORT, KEY1_PIN) == 0)
+    if (GPIO_ReadInputDataBit(KEY1_PORT, KEY1_PIN) == 1)
     {
         os_delay_ms(20); // 消抖
-        if (GPIO_ReadInputDataBit(KEY1_PORT, KEY1_PIN) == 0)
+        if (GPIO_ReadInputDataBit(KEY1_PORT, KEY1_PIN) == 1)
         {
             // 等待按键松开
-            while (GPIO_ReadInputDataBit(KEY1_PORT, KEY1_PIN) == 0)
+            while (GPIO_ReadInputDataBit(KEY1_PORT, KEY1_PIN) == 1)
                 ;
             os_delay_ms(20); // 消抖
             return 1;
@@ -622,15 +636,16 @@ int is_key1_press(void)
     // 如果持续时间无效，返回无按键状态
     return 0;
 }
+// 高电平有效
 int is_key2_press(void)
 {
-    if (GPIO_ReadInputDataBit(KEY2_PORT, KEY2_PIN) == 0)
+    if (GPIO_ReadInputDataBit(KEY2_PORT, KEY2_PIN) == 1)
     {
         os_delay_ms(20); // 消抖
-        if (GPIO_ReadInputDataBit(KEY2_PORT, KEY2_PIN) == 0)
+        if (GPIO_ReadInputDataBit(KEY2_PORT, KEY2_PIN) == 1)
         {
             // 等待按键松开
-            while (GPIO_ReadInputDataBit(KEY2_PORT, KEY2_PIN) == 0)
+            while (GPIO_ReadInputDataBit(KEY2_PORT, KEY2_PIN) == 1)
                 ;
             os_delay_ms(20); // 消抖
             return 1;
@@ -692,17 +707,6 @@ void bike_task(void *pvParameters)
             Log_d("NOTIFY_DATA_EXPORT\n");
             bike_data_export();
         }
-    }
-}
-
-void timer_handle_bike_cb(TimerHandle_t xTimer)
-{
-    bike_screen_show();
-
-    if (my_bike.bike_state == RUNNING)
-    {
-        bike_local_handle();
-        bike_online_handle();
     }
 }
 

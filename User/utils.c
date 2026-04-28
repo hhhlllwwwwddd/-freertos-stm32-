@@ -3,8 +3,8 @@
 #include "math.h"
 #include "utils.h"
 
-#define WEIGHT_KG                       70              /**< 体重，用于计算卡路里 */
-#define WEIGHT_FACTOR                   0.5             /**< 体重系数，用于计算卡路里 */
+#define WEIGHT_KG 70      /**< 体重，用于计算卡路里 */
+#define WEIGHT_FACTOR 0.5 /**< 体重系数，用于计算卡路里 */
 /* 无符号整数转成缩小100倍的浮点数 */
 float uint16_to_float(uint16_t value)
 {
@@ -20,9 +20,12 @@ uint16_t float_to_uint16(float value)
     float scaled_value = value * 100.0f;
 
     // 实现四舍五入，不考虑负数
-    if (scaled_value > 0) {
+    if (scaled_value > 0)
+    {
         result = (uint16_t)(scaled_value + 0.5f);
-    } else {
+    }
+    else
+    {
         result = 0;
     }
     return result;
@@ -36,7 +39,7 @@ float int16_to_float(int16_t value)
     return result;
 }
 
- /* 浮点数转成放大100倍的有符号整数 */
+/* 浮点数转成放大100倍的有符号整数 */
 int16_t float_to_int16(float value)
 {
     int16_t result;
@@ -44,10 +47,12 @@ int16_t float_to_int16(float value)
     float scaled_value = value * 100.0f;
 
     // 根据数值的正负性进行四舍五入
-    if (scaled_value > 0) {
+    if (scaled_value > 0)
+    {
         result = (int16_t)(scaled_value + 0.5f);
     }
-    else {
+    else
+    {
         result = (int16_t)(scaled_value - 0.5f);
     }
     return result;
@@ -58,7 +63,7 @@ int16_t float_to_int16(float value)
  * 比如 100 秒，应当转成 00:01:40
  * 3700秒，应当转成 01:01:40
  */
-char* format_seconds(int total_seconds, char *formatted_time)
+char *format_seconds(int total_seconds, char *formatted_time)
 {
     int hours, minutes, seconds;
 
@@ -73,7 +78,7 @@ char* format_seconds(int total_seconds, char *formatted_time)
     return formatted_time;
 }
 /* 整数时间戳转成字符串*/
-char* timestamp_to_time_str(uint32_t t, char *time_str)
+char *timestamp_to_time_str(uint32_t t, char *time_str)
 {
     int year, month, day, hour, minute, second;
     time_t days, seconds;
@@ -90,28 +95,34 @@ char* timestamp_to_time_str(uint32_t t, char *time_str)
 
     // 计算自1970年1月1日以来的年份
     year = 1970;
-    while (1) {
+    while (1)
+    {
         int days_in_year = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) ? 366 : 365;
-        if (days >= days_in_year) {
+        if (days >= days_in_year)
+        {
             days -= days_in_year;
             year++;
         }
-        else {
+        else
+        {
             break;
         }
     }
 
     // 计算月份和日期
     month = 0;
-    static const int days_in_month[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-    static const int days_in_month_leap[] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    static const int days_in_month[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    static const int days_in_month_leap[] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     const int *days_per_month = ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) ? days_in_month_leap : days_in_month;
 
-    for (month = 0; month < 12; month++) {
-        if (days >= days_per_month[month]) {
+    for (month = 0; month < 12; month++)
+    {
+        if (days >= days_per_month[month])
+        {
             days -= days_per_month[month];
         }
-        else {
+        else
+        {
             break;
         }
     }
@@ -123,11 +134,11 @@ char* timestamp_to_time_str(uint32_t t, char *time_str)
 
     // 格式化字符串
     sprintf(time_str, "%02d-%02d-%02d %02d:%02d:%02d", year % 100, month, day, hour, minute, second);
-    
+
     return time_str;
 }
 /* 时间字符串转换成整数时间戳 */
-uint32_t time_str_to_timestamp(char* time_str)
+uint32_t time_str_to_timestamp(char *time_str)
 {
     struct tm tm;
 
@@ -144,8 +155,8 @@ uint32_t time_str_to_timestamp(char* time_str)
 
     // 解析字符串
     sscanf(time_str, "%2d-%2d-%2d %2d:%2d:%2d",
-        &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
-        &tm.tm_hour, &tm.tm_min, &tm.tm_sec);
+           &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
+           &tm.tm_hour, &tm.tm_min, &tm.tm_sec);
 
     // 年份是从1900年开始的，所以需要加上1900
     tm.tm_year += 100; // 从24到2024年，因此加上100
@@ -179,7 +190,7 @@ double convert_lon(double x, double y)
 }
 
 /* WGS-84坐标转换为GCJ-02坐标 */
-void gps_to_gcj02(double wgs_lat, double wgs_lon, double* gcj_lat, double* gcj_lon)
+void gps_to_gcj02(double wgs_lat, double wgs_lon, double *gcj_lat, double *gcj_lon)
 {
     double dLat = convert_lat(wgs_lon - 105.0, wgs_lat - 35.0);
     double dLon = convert_lon(wgs_lon - 105.0, wgs_lat - 35.0);
@@ -196,21 +207,22 @@ void gps_to_gcj02(double wgs_lat, double wgs_lon, double* gcj_lat, double* gcj_l
 /* 将度、分形式转换为十进制的度形式 */
 double convert_to_decimal_degrees(double degree_minutes)
 {
-    int degrees = (int)(degree_minutes / 100);          // 提取度
-    double minutes = degree_minutes - (degrees * 100);   // 提取分
-    return degrees + (minutes / 60.0);                  // 计算十进制度
+    int degrees = (int)(degree_minutes / 100);         // 提取度
+    double minutes = degree_minutes - (degrees * 100); // 提取分
+    return degrees + (minutes / 60.0);                 // 计算十进制度
 }
 /* 计算平均温湿度 */
-void calc_average_humi_temp(float humi, float temp, float* average_humi, float* average_temp, int reset_data)
+void calc_average_humi_temp(float humi, float temp, float *average_humi, float *average_temp, int reset_data)
 {
     // 下面这3个变量只在本函数中被使用，在其他地方没有操作过，故使用局部变量即可
     // 但这3个变量需要累计，即每次调用时数值仍是上一次的，故设置为static类型的
     static float total_humi = 0.0;
     static float total_temp = 0.0;
     static uint32_t cnt = 0;
-    
+
     // 检查是否需要重置累积值
-    if (reset_data) {
+    if (reset_data)
+    {
         total_humi = 0.0;
         total_temp = 0.0;
         cnt = 0;
@@ -237,10 +249,11 @@ float calc_total_distance_km(float distance_km, int reset_data)
 {
     static float total_distance_km = 0.0;
 
-    if (reset_data) {
+    if (reset_data)
+    {
         total_distance_km = 0.0;
     }
-    
+
     total_distance_km += distance_km;
 
     return total_distance_km;
@@ -260,11 +273,12 @@ float calc_max_speed_kmh(float speed_kmh, int reset_data)
 {
     static float max_speed_kmh = 0.0;
 
-    if (reset_data) {
+    if (reset_data)
+    {
         max_speed_kmh = 0.0;
     }
 
-    if(speed_kmh > max_speed_kmh)
+    if (speed_kmh > max_speed_kmh)
         max_speed_kmh = speed_kmh;
 
     return max_speed_kmh;

@@ -33,7 +33,6 @@ void test(void *pvParameters)
     }
 }
 
-// 测试git提交
 int main(void)
 {
     /* 配置NVIC为4号分组方式 */

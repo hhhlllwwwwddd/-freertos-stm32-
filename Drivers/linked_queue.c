@@ -7,9 +7,11 @@ void init_queue(queue_t *queue)
 {
     queue->front = queue->rear = NULL;
     queue->mutex = xSemaphoreCreateMutex(); // 创建互斥锁
-    if(queue->mutex == NULL) {
+    if (queue->mutex == NULL)
+    {
         Log_e("init queue failed!");
-        while (1);
+        while (1)
+            ;
     }
 }
 /* 判空操作，如果是空返回1，非空返回0 */
@@ -24,24 +26,28 @@ int is_empty(queue_t *queue)
 /*
 int is_full(queue_t *queue)
 {
-    
+
 }
 */
 /* 入队操作 */
 int enqueue(queue_t *queue, data_type_t value)
 {
-    queue_node_t *new_node = (queue_node_t*)os_malloc(sizeof(queue_node_t));
-    if (!new_node) {
+    queue_node_t *new_node = (queue_node_t *)os_malloc(sizeof(queue_node_t));
+    if (!new_node)
+    {
         return ERROR; // 内存分配失败
     }
     new_node->data = value;
     new_node->next = NULL;
-    
+
     xSemaphoreTake(queue->mutex, portMAX_DELAY);
 
-    if (is_empty(queue)) {
+    if (is_empty(queue))
+    {
         queue->front = queue->rear = new_node;
-    } else {
+    }
+    else
+    {
         queue->rear->next = new_node;
         queue->rear = new_node;
     }
@@ -57,17 +63,19 @@ int dequeue(queue_t *queue, data_type_t *value)
 
     xSemaphoreTake(queue->mutex, portMAX_DELAY);
 
-    if (is_empty(queue)) {
+    if (is_empty(queue))
+    {
         xSemaphoreGive(queue->mutex);
         return ERROR; // 队列为空
     }
     del_node = queue->front;
     *value = del_node->data;
     queue->front = queue->front->next;
-    if (queue->front == NULL) { // 如果是删除最后一个有效节点
-        queue->rear = NULL;     // 应当把rear也置为空指针
+    if (queue->front == NULL)
+    {                       // 如果是删除最后一个有效节点
+        queue->rear = NULL; // 应当把rear也置为空指针
     }
-    
+
     xSemaphoreGive(queue->mutex);
     os_free(del_node);
     return OK;
@@ -76,8 +84,9 @@ int dequeue(queue_t *queue, data_type_t *value)
 int queue_head(queue_t *queue, data_type_t *value)
 {
     xSemaphoreTake(queue->mutex, portMAX_DELAY);
-    
-    if (is_empty(queue)) {
+
+    if (is_empty(queue))
+    {
         xSemaphoreGive(queue->mutex);
         return ERROR;
     }
@@ -96,10 +105,12 @@ int queue_test_type_int(void)
     /* 初始化队列 */
     init_queue(&queue);
 
-    if (is_empty(&queue)) {
+    if (is_empty(&queue))
+    {
         printf("Quueue is empty\n\n");
     }
-    else {
+    else
+    {
         printf("Queue not empty\n\n");
     }
     /* 增加一些元素 */
@@ -115,7 +126,8 @@ int queue_test_type_int(void)
     queue_head(&queue, &value);
     printf("front value of queue is [%d]\n", value);
 
-    while (!is_empty(&queue)) {
+    while (!is_empty(&queue))
+    {
         dequeue(&queue, &value);
         printf("dequeue value [%d]\n", value);
     }
@@ -132,23 +144,28 @@ int queue_test_type_int(void)
 int queue_test_type_string(void)
 {
     queue_t queue;
-    char* value;
+    char *value;
     int i;
 
     /* 初始化队列 */
     init_queue(&queue);
 
-    if (is_empty(&queue)) {
+    if (is_empty(&queue))
+    {
         printf("Queue is empty\n\n");
-    } else {
+    }
+    else
+    {
         printf("Queue not empty\n\n");
     }
 
     /* 增加一些字符串元素 */
     const char *test_data[] = {"apple", "banana", "cherry", "date"};
-    for (i = 0; i < sizeof(test_data)/sizeof(test_data[0]); i++) {
+    for (i = 0; i < sizeof(test_data) / sizeof(test_data[0]); i++)
+    {
         char *str = (char *)os_malloc(STR_BUF_LEN);
-        if (!str) {
+        if (!str)
+        {
             printf("Memory allocation failed\n");
             return -1;
         }
@@ -157,14 +174,17 @@ int queue_test_type_string(void)
         enqueue(&queue, str);
     }
 
-    if (queue_head(&queue, &value) == OK) {
+    if (queue_head(&queue, &value) == OK)
+    {
         printf("front value of queue is [%s]\n", value);
     }
 
-    while (!is_empty(&queue)) {
-        if (dequeue(&queue, &value) == OK) {
+    while (!is_empty(&queue))
+    {
+        if (dequeue(&queue, &value) == OK)
+        {
             printf("dequeue value [%s]\n", value);
-            os_free(value);  // 释放字符串内存
+            os_free(value); // 释放字符串内存
         }
     }
 

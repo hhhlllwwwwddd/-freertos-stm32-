@@ -1,12 +1,13 @@
 #ifndef __LOG_H
 #define __LOG_H
 
-#define LOG_MSG_MAX_LEN     (512)
+#define LOG_MSG_MAX_LEN (512)
 
 /**
  * 日志输出等级
  */
-typedef enum {
+typedef enum
+{
     LOG_DEBUG,
     LOG_INFO,
     LOG_WARN,

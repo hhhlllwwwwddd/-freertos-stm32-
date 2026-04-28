@@ -67,6 +67,7 @@ void usart2_init(void)
 
     USART_Cmd(USART2, ENABLE);
 }
+/**====================usart2==================== */
 
 void usart3_send_byte(uint8_t byte)
 {
@@ -136,6 +137,8 @@ void usart3_init(void)
 
     USART_Cmd(USART3, ENABLE);
 }
+
+/**====================usart3==================== */
 
 /* 发送一个字节 */
 void usart1_send_byte(uint8_t byte)
@@ -211,3 +214,4 @@ void usart1_init(void)
 
     USART_Cmd(USART1, ENABLE);
 }
+/**====================usart1==================== */

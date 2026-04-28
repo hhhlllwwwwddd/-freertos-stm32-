@@ -7,27 +7,29 @@
 #include "flash_data.h"
 #include "utils.h"
 
-#define ITEM_CNT_IN_RECORD 13               /**< 一条记录有几个数据项 */
-#define RECORD_SIZE 256                     /**< 一条记录的大小 */
+#define ITEM_CNT_IN_RECORD 13 /**< 一条记录有几个数据项 */
+#define RECORD_SIZE 256       /**< 一条记录的大小 */
 
-#pragma pack(push, 1)                       /**< 强制结构体的成员紧密排列 */
-struct riding_item {                        /**< 18字节 */
-    double      lon_deg;                    /**< 实时经度的原始数据，单位度分 */
-    double      lat_deg;                    /**< 实时纬度的原始数据，单位度分 */
-    uint16_t    speed_kmh;                  /**< 实时速度 */
+#pragma pack(push, 1) /**< 强制结构体的成员紧密排列 */
+struct riding_item
+{                       /**< 18字节 */
+    double lon_deg;     /**< 实时经度的原始数据，单位度分 */
+    double lat_deg;     /**< 实时纬度的原始数据，单位度分 */
+    uint16_t speed_kmh; /**< 实时速度 */
 };
-#pragma pack(pop)                           /**< 强制结构体的成员紧密排列 */
+#pragma pack(pop) /**< 强制结构体的成员紧密排列 */
 
-struct riding_status {                      /**< 20字节 */
-    uint32_t    timestamp;                  /**< UNIX时间戳 */
-    uint16_t    max_speed_kmh;              /**< 最大时速 */
-    uint16_t    average_speed_kmh;          /**< 平均时速 */
-    float       kcal;                       /**< 平均时速 */
-    uint16_t    average_humi;               /**< 平均湿度 */
-    int16_t     average_temp;               /**< 平均温度 */
-    uint16_t    total_distance_km;          /**< 骑行距离，单位：公里 */
-    uint8_t     reserved[1];                /**< 保留1字节 */
-    uint8_t     write_flag;                 /**< 已写入标记位 0xA5 */
+struct riding_status
+{                               /**< 20字节 */
+    uint32_t timestamp;         /**< UNIX时间戳 */
+    uint16_t max_speed_kmh;     /**< 最大时速 */
+    uint16_t average_speed_kmh; /**< 平均时速 */
+    float kcal;                 /**< 平均时速 */
+    uint16_t average_humi;      /**< 平均湿度 */
+    int16_t average_temp;       /**< 平均温度 */
+    uint16_t total_distance_km; /**< 骑行距离，单位：公里 */
+    uint8_t reserved[1];        /**< 保留1字节 */
+    uint8_t write_flag;         /**< 已写入标记位 0xA5 */
 };
 
 /**> 是否是写入第一条数据项，如果是，则表示是刚刚启动骑行 */
@@ -38,7 +40,7 @@ void set_first_write_flag(void)
     write_first_item = 1;
 }
 /**> 获取当前骑行状态信息，并将它们转成相应的存储格式 */
-static void get_riding_status(struct riding_status* status)
+static void get_riding_status(struct riding_status *status)
 {
     status->write_flag = FLASH_WRITE_FLAG;
     status->reserved[0] = 0;
@@ -53,17 +55,18 @@ static void get_riding_status(struct riding_status* status)
 /*
  * 写一条记录到flash
  * 13个 item + 1个status= 1条 record
-*/
-void write_record_to_flash(struct riding_item items[ITEM_CNT_IN_RECORD], struct riding_status* status) 
+ */
+void write_record_to_flash(struct riding_item items[ITEM_CNT_IN_RECORD], struct riding_status *status)
 {
     int i;
-    uint8_t record_buf[RECORD_SIZE] = { 0 };
-    uint8_t* ptr = record_buf;
+    uint8_t record_buf[RECORD_SIZE] = {0};
+    uint8_t *ptr = record_buf;
     /* 当前写入flash的页地址 */
     static uint32_t current_page_addr;
 
     // 复制 13 个 riding_item 到缓冲区
-    for (i = 0; i < ITEM_CNT_IN_RECORD; i++) {
+    for (i = 0; i < ITEM_CNT_IN_RECORD; i++)
+    {
         memcpy(ptr, &items[i], sizeof(struct riding_item));
         ptr += sizeof(struct riding_item);
     }
@@ -73,14 +76,16 @@ void write_record_to_flash(struct riding_item items[ITEM_CNT_IN_RECORD], struct 
 
     // 复制 riding_status 到缓冲区
     memcpy(ptr, status, sizeof(struct riding_status));
-    
-    if(write_first_item) {
+
+    if (write_first_item)
+    {
         current_page_addr = get_next_table_addr();
         Log_i("item start page addr:0x%x\n", current_page_addr);
     }
 
     // 判断是否需要擦除扇区
-    if (current_page_addr % 4096 == 0) {
+    if (current_page_addr % 4096 == 0)
+    {
         Log_i("erase addr 0x%x\n", current_page_addr);
         w25qxx_sector_erase(current_page_addr);
     }
@@ -91,13 +96,14 @@ void write_record_to_flash(struct riding_item items[ITEM_CNT_IN_RECORD], struct 
 
     current_page_addr += RECORD_SIZE;
 
-    if(write_first_item) {
+    if (write_first_item)
+    {
         write_first_item = 0;
         write_index();
     }
 }
 
-void save_item(char* lat, char* lon, float speed_kmh, enum BIKE_STATE bike_state)
+void save_item(char *lat, char *lon, float speed_kmh, enum BIKE_STATE bike_state)
 {
     struct riding_status status;
     struct riding_item item;
@@ -109,13 +115,14 @@ void save_item(char* lat, char* lon, float speed_kmh, enum BIKE_STATE bike_state
     sscanf(lon, "%lf", &item.lon_deg);
     item.speed_kmh = float_to_uint16(speed_kmh);
 
-    Log_i("idx:%d, lat: %lf, lng: %lf, speed: %u\n", items_idx, 
-        item.lat_deg, item.lon_deg, item.speed_kmh);
+    Log_i("idx:%d, lat: %lf, lng: %lf, speed: %u\n", items_idx,
+          item.lat_deg, item.lon_deg, item.speed_kmh);
 
     memcpy(&items[items_idx++], &item, sizeof(struct riding_item));
 
     /* 共写入13条，234字节 */
-    if (items_idx == ITEM_CNT_IN_RECORD || bike_state == STOP) {
+    if (items_idx == ITEM_CNT_IN_RECORD || bike_state == STOP)
+    {
         get_riding_status(&status);
         write_record_to_flash(items, &status);
         /* 清空已经写入的全部经纬速度 */
@@ -124,7 +131,7 @@ void save_item(char* lat, char* lon, float speed_kmh, enum BIKE_STATE bike_state
     }
 }
 
-void print_status(int n, struct riding_status* status)
+void print_status(int n, struct riding_status *status)
 {
     char time_str[32] = {0};
     uint32_t start_ts = get_table_n_created_timestamp(n);
@@ -142,73 +149,82 @@ void print_status(int n, struct riding_status* status)
     Log_d("=====================================================\n");
 }
 
-void print_item(struct riding_item* item)
+void print_item(struct riding_item *item)
 {
-    double              lat_dec;       // 10进制，度
-    double              lon_dec;
-    double              gcj_lat;       // 火星坐标
-    double              gcj_lon;
+    double lat_dec; // 10进制，度
+    double lon_dec;
+    double gcj_lat; // 火星坐标
+    double gcj_lon;
 
     lat_dec = convert_to_decimal_degrees(item->lat_deg);
     lon_dec = convert_to_decimal_degrees(item->lon_deg);
 
     gps_to_gcj02(lat_dec, lon_dec, &gcj_lat, &gcj_lon);
 
-    os_printf("{ lat: %.16lf, lng: %.16lf, speed: %.02f },\n", 
-        gcj_lat, gcj_lon, uint16_to_float(item->speed_kmh));
+    os_printf("{ lat: %.16lf, lng: %.16lf, speed: %.02f },\n",
+              gcj_lat, gcj_lon, uint16_to_float(item->speed_kmh));
 }
 /*
  * 输出一次骑行数据
-*/
+ */
 void print_table_n(int n)
 {
-    uint8_t             record_buf[RECORD_SIZE] = {0};
-    uint8_t             zero_array[18] = {0};
-    int                 i;
-    int                 is_valid_data = 0;
-    uint8_t             npage = 0;
-    uint32_t            start = get_table_n_addr(n);
-    uint32_t            addr;
-    struct riding_item  *item;
+    uint8_t record_buf[RECORD_SIZE] = {0};
+    uint8_t zero_array[18] = {0};
+    int i;
+    int is_valid_data = 0;
+    uint8_t npage = 0;
+    uint32_t start = get_table_n_addr(n);
+    uint32_t addr;
+    struct riding_item *item;
     struct riding_status last_status;
 
     OLED_Clear_Part(2, 1, 16);
     OLED_ShowString(2, 1, " data exproting");
 
-    while (1) {
+    while (1)
+    {
         memset(record_buf, 0, sizeof(record_buf));
-        
+
         addr = start + npage * RECORD_SIZE;
 
         w25qxx_read_bytes(addr, record_buf, RECORD_SIZE);
 
-        if(record_buf[255] == FLASH_WRITE_FLAG) {
-            if(is_valid_data == 0) {
+        if (record_buf[255] == FLASH_WRITE_FLAG)
+        {
+            if (is_valid_data == 0)
+            {
                 // 输出一次开头
                 is_valid_data = 1;
                 os_printf("var data = [\n");
             }
-            
+
             memcpy(&last_status, &record_buf[236], sizeof(struct riding_status));
-            
-            item = (struct riding_item*)record_buf;
-            
+
+            item = (struct riding_item *)record_buf;
+
             OLED_Clear_Part(3, 1, 16);
 
-            for(i = 0; i < ITEM_CNT_IN_RECORD; i++, item++) {
+            for (i = 0; i < ITEM_CNT_IN_RECORD; i++, item++)
+            {
                 /* 如果3个变量均为0，则是数据结尾，不再循环输出 */
-                if(memcmp(item, zero_array, sizeof(struct riding_item)) == 0)
+                if (memcmp(item, zero_array, sizeof(struct riding_item)) == 0)
                     break;
                 print_item(item);
                 // 为更好和用户交互，屏幕显示类似进度条的读出效果
                 OLED_ShowString(3, i + 2, ".");
             }
-        } else{
-            if(is_valid_data == 1) {
+        }
+        else
+        {
+            if (is_valid_data == 1)
+            {
                 // 输出一次结尾，如果一条有效数据都没有发现，则什么都不输出
                 os_printf("];\n");
                 print_status(n, &last_status);
-            } else {
+            }
+            else
+            {
                 Log_w("can not find table [%d] flag, addr:0x%x\n", n, addr);
             }
             break;
@@ -216,7 +232,7 @@ void print_table_n(int n)
 
         npage++;
     }
-    
+
     OLED_Clear_Part(2, 1, 16);
     OLED_Clear_Part(3, 1, 16);
 }
@@ -226,20 +242,22 @@ void init_flash(void)
     uint8_t MID;
     uint16_t DID;
 
-     /* 初始化SPI */
+    /* 初始化SPI */
     spi_init();
-    
+
     w25qxx_init();
     w25qxx_read_id(&MID, &DID);
 
     Log_d("MID:0x%X, DID:0x%X\r\n", MID, DID);
-    /* 这里只校验了制造商ID，严格来讲可以同时校验设备ID */    
-    if (MID != 0xEF) {
+    /* 这里只校验了制造商ID，严格来讲可以同时校验设备ID */
+    if (MID != 0xEF)
+    {
         Log_e("SPI Flash W25QXX test fail\r\n");
-        while(1) ;
+        while (1)
+            ;
     }
     /* 如果之前运行过 Plus 版本，此处需要先擦除一次全片flash，因为标记位是相同的 */
-    //w25qxx_chip_erase();
+    // w25qxx_chip_erase();
 
     init_index();
 }

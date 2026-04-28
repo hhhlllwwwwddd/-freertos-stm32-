@@ -14,7 +14,7 @@ const char *RESPONSE_OK = "OK\r\n";
 const char *RESPONSE_ERROR = "ERROR";
 const char *RESPONSE_FAIL = "FAIL";
 
-TaskHandle_t at_task_handle = NULL;
+TaskHandle_t at_task_handle = NULL; // AT 任务句柄
 
 /* 如下这些变量，可以封装成一个结构体 */
 static char air780e_ip[16];
@@ -25,7 +25,7 @@ static int recv_data_len = 0;
 
 recv_cb_t recv_cb; /* 函数指针 */
 
-static queue_t cmd_queue;
+static queue_t cmd_queue; // 命令队列，用于存储要发送的字符串数据
 
 #define AIR780E_CONNECTED_SERVER 1
 #define AIR780E_NOT_CONNECTED_SERVER 0
@@ -266,7 +266,7 @@ void air780e_send_data(const char *data, int len)
             return;
         }
         strcpy(str, data);
-        enqueue(&cmd_queue, str);
+        enqueue(&cmd_queue, str);             // 将要发送的字符串数据入比如串口发送数据入链式队列，等待发送任务处理
         Log_d("enqueue address [%p]\n", str); // remember to free!
         xTaskNotify(at_task_handle, NOTIFY_SEND_DATA, eSetBits);
     }
@@ -408,7 +408,7 @@ AT_RESULT air780e_activate_connect_server(const char *ip, int port)
 void air780e_at_task(void *pvParameters)
 {
     uint32_t notify_bits = 0;
-    char *data_to_send;
+    char *data_to_send; // 待发送的数据接收缓冲区指针类型
 
     while (1)
     {
@@ -422,7 +422,7 @@ void air780e_at_task(void *pvParameters)
             {
                 os_delay_ms(100);
             }
-            USART_ITConfig(USART2, USART_IT_IDLE, ENABLE); // 使能空闲中断
+            USART_ITConfig(USART2, USART_IT_IDLE, ENABLE); // 使能空闲中断准备接受服务器数据，4G 模块透传模式接收数据的关键机制
             xTaskNotify(bike_task_handle, NOTIFY_CONNECTED_SERVER, eSetBits);
         }
 
@@ -432,9 +432,11 @@ void air780e_at_task(void *pvParameters)
 
             while (!is_empty(&cmd_queue))
             {
-                if (dequeue(&cmd_queue, &data_to_send) == OK)
+                if (dequeue(&cmd_queue, &data_to_send) == OK) // 从链式队列cmd_queue中出队数据字符串到data_to_send
                 {
+                    // 打印发送的数据
                     Log_d("send [%p] [%s] to server\n", data_to_send, data_to_send);
+                    // 发送数据到服务器
                     at_passthrough_send(data_to_send, strlen(data_to_send));
                     os_free(data_to_send); // 释放字符串内存
                     data_to_send = NULL;
@@ -447,9 +449,12 @@ void air780e_at_task(void *pvParameters)
             Log_d("NOTIFY_USART_RX\n");
             if (_air780e_is_connected_server == AIR780E_CONNECTED_SERVER)
             {
+                // 透传模式下，直接从环形缓冲区里读取数据到recv_buf，不进行解析
                 recv_data_len = at_passthrough_receive(recv_buf, sizeof(recv_buf));
                 recv_buf[recv_data_len] = '\0';
-                recv_cb(recv_buf, recv_data_len);
+                // 对收到的数据进行解析
+                // 函数指针实际调用air780e_recv_data_cb函数
+                recv_cb(recv_buf, recv_data_len); // 调用回调函数处理收到的数据:将收到的数据传递给外部应用层处理
             }
         }
 
@@ -499,7 +504,7 @@ void air780e_init(void)
     // 1K字节的栈空间
     xTaskCreate(air780e_at_task, "air780e_at_task", 256, NULL, 4,
                 (TaskHandle_t *)&at_task_handle);
-    os_mem_info();
+    os_mem_info(); // 显示内存使用情况
 
     /* AIR780E AT指令串口，注意波特率要和AIR780E模块配置相同 */
     usart2_init();

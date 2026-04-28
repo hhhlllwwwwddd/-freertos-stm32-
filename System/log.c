@@ -10,16 +10,22 @@
 static SemaphoreHandle_t log_mutex;
 
 static char *level_str[] = {
-    "DBG", "INF", "WRN", "ERR",
+    "DBG",
+    "INF",
+    "WRN",
+    "ERR",
 };
 // __FILE__ 中包含了文件夹的名称，需要去掉文件夹名
 static const char *_get_filename(const char *p)
 {
     char ch = '\\';
-    const char *q = strrchr(p,ch);
-    if(q == NULL) {
+    const char *q = strrchr(p, ch);
+    if (q == NULL)
+    {
         q = p;
-    } else {
+    }
+    else
+    {
         q++;
     }
     return q;
@@ -34,23 +40,24 @@ void os_log(const char *file, const int line, const int level, const char *fmt, 
 {
     int offset = 0;
 
-	if (level < log_level) {
-		return;
-	}
-    
+    if (level < log_level)
+    {
+        return;
+    }
+
     const char *file_name = _get_filename(file);
-    
+
     // 保护串口输出，防止任务切换导致数据错乱
     xSemaphoreTake(log_mutex, portMAX_DELAY);
 
     // 先把日志前缀写入buf，比如"INFO|main.c(123): "
-    offset = sprintf(log_buf, "%s|%s(%d): ", level_str[level],  file_name, line);
+    offset = sprintf(log_buf, "%s|%s(%d): ", level_str[level], file_name, line);
 
     va_list args;
     va_start(args, fmt);
     vsnprintf(log_buf + offset, sizeof(log_buf) - offset, fmt, args); // 从offset位置继续写，剩下的空间也要算
     va_end(args);
-    
+
     usart1_send_string(log_buf);
 
     xSemaphoreGive(log_mutex);
@@ -66,18 +73,19 @@ void os_printf(const char *fmt, ...)
     va_start(args, fmt);
     vprintf(fmt, args); //  vprintf 处理 va_list，输出到串口
     va_end(args);
-    
+
     xSemaphoreGive(log_mutex);
 }
 
 void log_init(LOG_LEVEL level)
 {
     usart1_init();
-    
+
     log_level = level;
 
     log_mutex = xSemaphoreCreateMutex();
-    if (!log_mutex) {
+    if (!log_mutex)
+    {
         printf("log init wrong!\n");
     }
 }

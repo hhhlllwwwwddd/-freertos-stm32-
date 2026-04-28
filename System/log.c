@@ -55,6 +55,7 @@ void os_log(const char *file, const int line, const int level, const char *fmt, 
 
     va_list args;
     va_start(args, fmt);
+    // 处理格式化字符串，将参数写入buf中，可输出文件名和行号等信息
     vsnprintf(log_buf + offset, sizeof(log_buf) - offset, fmt, args); // 从offset位置继续写，剩下的空间也要算
     va_end(args);
 
@@ -71,6 +72,7 @@ void os_printf(const char *fmt, ...)
 
     va_list args;
     va_start(args, fmt);
+    // 直接输出格式化字符串到串口，不使用buf
     vprintf(fmt, args); //  vprintf 处理 va_list，输出到串口
     va_end(args);
 
